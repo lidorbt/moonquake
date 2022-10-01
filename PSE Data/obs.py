@@ -14,7 +14,7 @@ import glob
 folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds-apollo_pse/data/xa/continuous_waveform/s16/1972'
 
 START = 10
-FINISH = 11
+FINISH = 50
 OFFSET = 500
 RESOLUTION = 100
 
@@ -27,7 +27,11 @@ def day_thread(day_folder):
 
 def json_by_year(folder):
     year_data = {}
-    [year_data.update(process_day_stream(merge_stream(day_folder))) for day_folder in tqdm(sorted(glob.glob(f'{folder}/*/')))]
+    [year_data.update(process_day_stream(merge_stream(day_folder))) for day_folder in tqdm(sorted(glob.glob(f'{folder}/*/'))[START:FINISH])]
+
+    plt.figure(figsize=(20,10), dpi=200)
+    plt.plot(year_data.values())
+    plt.show()
 
     with open(f'{folder.split("/")[-2]}.json', 'w') as f:
         json.dump(year_data, f)
