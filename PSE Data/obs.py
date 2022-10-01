@@ -1,20 +1,16 @@
 #%%
-from socketserver import ForkingUDPServer
 import obspy
-import obspy.signal.filter as filter
 import numpy as np
 import os
 import json
 from tqdm import tqdm
 from matplotlib import pyplot as plt
-import scipy.signal as ss
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import glob
 
 folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds-apollo_pse/data/xa/continuous_waveform/s16/1972'
 
-START = 10
-FINISH = 50
+START = None
+FINISH = None
 OFFSET = 500
 RESOLUTION = 100
 
@@ -29,7 +25,7 @@ def json_by_year(folder):
     year_data = {}
     [year_data.update(process_day_stream(merge_stream(day_folder))) for day_folder in tqdm(sorted(glob.glob(f'{folder}/*/'))[START:FINISH])]
 
-    plt.figure(figsize=(20,10), dpi=200)
+    plt.figure(figsize=(20, 10), dpi=200)
     plt.plot(year_data.values())
     plt.show()
 
@@ -50,6 +46,8 @@ def process_day_stream(stream):
 
     channels = [norm(stream.select(channel=channel)[0], RESOLUTION) for channel in ['MH1', 'MH2', 'MHZ']]
 
+    channels = [np.round(np.average(channels, axis=0), 3), channels[2]]
+
     start_time = att_trace.stats.starttime
     end_time = att_trace.stats.endtime
     add_time = (end_time - start_time) / len(norm_att_trace)
@@ -61,7 +59,7 @@ def process_day_stream(stream):
 
 def norm(trace, resolution) -> np.ndarray:
     # Gets the norm of a trace
-    return [round((np.abs(np.average(chunk) - OFFSET)),3) for chunk in np.array_split(clean_data(trace.data), trace.stats.npts // resolution, axis=0)]
+    return [round((np.abs(np.average(chunk) - OFFSET)), 3) for chunk in np.array_split(clean_data(trace.data), trace.stats.npts // resolution, axis=0)]
 
 def clean_data(data):
     # Cleans the data by removing the offset
