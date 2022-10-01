@@ -12,10 +12,11 @@ folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds
 
 # streams = [obspy.read(file) for file in glob.glob(f'{folder}/**/*.mseed', recursive=True)]
 START = 10
-FINISH = 20
+FINISH = 100
+OFFSET = 500
 
 def norm(trace, resolution) -> np.ndarray:
-    return [np.average(chunk) for chunk in np.array_split(clean_data(trace.data), trace.stats.npts // resolution, axis=0)]
+    return [np.abs(np.average(chunk) - OFFSET) for chunk in np.array_split(clean_data(trace.data), trace.stats.npts // resolution, axis=0)]
 
 def get_trace(stream):
     return stream[0]
@@ -38,13 +39,14 @@ def get_all_channel_norms(folder, channel, resolution=4000):
     array = []
     for file in get_all_channel_files(folder, channel)[START:FINISH]:
         stream = obspy.read(file)
-        array.extend(get_trace_norm(stream, resolution=20000))
+        array.extend(get_trace_norm(stream, resolution=resolution))
     return array
 
+resolution = 20000
 Figure = plt.figure(figsize=(20, 10), dpi=100)
-plt.plot(get_all_channel_norms(folder, 'mh1')))))
-
-plt.plot(array)
+plt.plot(get_all_channel_norms(folder, 'mh1', resolution=resolution))
+plt.plot(get_all_channel_norms(folder, 'mh2', resolution=resolution))
+plt.plot(get_all_channel_norms(folder, 'mhz', resolution=resolution))
 plt.show()
 
 # #print(streams[0].plot())
