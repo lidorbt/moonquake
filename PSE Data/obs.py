@@ -7,7 +7,7 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import glob
 
-folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds-apollo_pse/data/xa/continuous_waveform/s16/1972'
+folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds-apollo_pse/data/xa/continuous_waveform/s12/1972'
 
 START = None
 FINISH = None
