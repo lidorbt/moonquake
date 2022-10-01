@@ -9,6 +9,11 @@ import { getHemisphereLight } from "./HemisphereLight";
 import { landings } from "./landings";
 import { getBackground } from "./Background";
 import moment from "moment";
+import apollo16data from "../MoonScene/s16.json";
+
+const dataMapper = {
+  apollo16: apollo16data,
+};
 
 const MOON_RADIUS = 10;
 
@@ -178,27 +183,24 @@ group.add(south);
 group.add(moon);
 scene.add(group);
 
-let currentDemoTime = moment();
-console.log(currentDemoTime.format("DD-MM-YYYY HH:mm"));
-const clock = new THREE.Clock()
-
 // -------- update spheres ------
 const updateSpheres = () => {
   landingObjects.forEach((obj) => {
-    const landingKey = obj.userData.landingKey
-
-    const usualRingGeom = new THREE.SphereGeometry(
-      MOON_RADIUS,
-      64,
-      1,
-      6.28,
-      6.28,
-      0.01,
-      0.05
-    );
-    // obj.material = Math.random() > 0.5 ? materialHigh : materialLow;
-    obj.geometry.dispose();
-    obj.geometry = usualRingGeom;
+    const landingKey = obj.userData.landingKey;
+    if (landingKey === "apollo16") {
+      const usualRingGeom = new THREE.SphereGeometry(
+        MOON_RADIUS,
+        64,
+        1,
+        6.28,
+        6.28,
+        0.01,
+        0.05
+      );
+      // obj.material = Math.random() > 0.5 ? materialHigh : materialLow;
+      obj.geometry.dispose();
+      obj.geometry = usualRingGeom;
+    }
   });
 };
 
