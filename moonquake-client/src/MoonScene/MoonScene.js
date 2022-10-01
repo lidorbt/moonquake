@@ -4,8 +4,10 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import textureImg from "../Assets/texture.png";
 import displacementImg from "../Assets/displacement.png";
 import apolloModel from "../Assets/apollo_lunar.obj";
+import apolloModelMap from "../Assets/apollo map.jpg";
 import { getHemisphereLight } from "./HemisphereLight";
 import { landings } from "./landings";
+import { getBackground } from "./Background";
 
 const MOON_RADIUS = 10;
 
@@ -41,14 +43,15 @@ const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load(textureImg);
 const displacementMap = textureLoader.load(displacementImg);
 
-// const background = new THREE.Mesh(
-//   getBackground().backgroundGeometry,
-//   getBackground().backgroundMaterial
-// );
-// scene.add(background); // TODO: add effect
+const background = new THREE.Mesh(
+  getBackground().backgroundGeometry,
+  getBackground().backgroundMaterial
+);
+scene.add(background); // TODO: add effect
 
-const light = new THREE.DirectionalLight(0xffffff, 1);
-// light.position.set(-100, 10, 50); // TODO: add effect
+const light = new THREE.AmbientLight(0x404040, 4);
+// const light = new THREE.DirectionalLight(0xffffff, 1); // TODO: return to be realistic
+light.position.set(-100, 10, 50); // TODO: add effect
 light.position.set(0, 10, 50);
 scene.add(light);
 
@@ -96,8 +99,18 @@ const group = new THREE.Group();
 
 Object.keys(landings).map(async (landingKey) => {
   const landingData = landings[landingKey];
-  const objLoader = new OBJLoader();
-  const landingObj = await objLoader.loadAsync(apolloModel);
+  const landingObjTexture = await new THREE.TextureLoader().loadAsync(
+    apolloModelMap
+  );
+
+  const landingObj = await new OBJLoader().loadAsync(apolloModel);
+
+  landingObj.traverse((child) => {
+    if (child.isMesh) {
+      child.material.map = landingObjTexture;
+      child.geometry.computeVertexNormals();
+    }
+  });
 
   landingObj.scale.x = landingObj.scale.y = landingObj.scale.z = 0.005;
   placeObjectOnPlanet(
@@ -111,6 +124,10 @@ Object.keys(landings).map(async (landingKey) => {
 });
 
 // ---- MARK EARTHQUAKES ----
+
+const drawEarthquakes = () => {
+  
+}
 
 Object.keys(landings).map(async (landingKey) => {
   const landingData = landings[landingKey];
@@ -135,25 +152,6 @@ Object.keys(landings).map(async (landingKey) => {
   placeObjectOnPlanet(sphere, landingData.lat, landingData.lon, 0.08);
 
   group.add(sphere);
-
-  const geometry2 = new THREE.SphereGeometry(
-    sphere_radius,
-    64,
-    1,
-    6.28,
-    6.28,
-    0.01,
-    0.1
-  );
-  const material2 = new THREE.MeshBasicMaterial({
-    color: 0xff0000,
-    side: THREE.DoubleSide,
-  });
-  const sphere2 = new THREE.Mesh(geometry2, material2);
-
-  placeObjectOnPlanet(sphere2, landingData.lat, landingData.lon, 0.08);
-
-  group.add(sphere2);
 });
 
 // ---- GROUP OBJECTS ----
