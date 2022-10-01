@@ -4,49 +4,64 @@ import obspy
 import obspy.signal.filter as filter
 import numpy as np
 import os
+import json
+from tqdm import tqdm
 from matplotlib import pyplot as plt
 import scipy.signal as ss
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import glob
 
-folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds-apollo_pse/data/xa/continuous_waveform/s16/1972/'
+folder = '/home/phononia/moon_quake/pds-geosciences.wustl.edu/lunar/urn-nasa-pds-apollo_pse/data/xa/continuous_waveform/s16/1972'
 
 START = 10
-FINISH = 20
+FINISH = 11
 OFFSET = 500
-RESOLUTION = 20000
+RESOLUTION = 100
+
+def save_json(data, filename):
+    with open(filename, 'w') as f:
+        json.dump(data, f)
+
+def day_thread(day_folder):
+    return process_day_stream(merge_stream(day_folder))
+
+def json_by_year(folder):
+    year_data = {}
+    [year_data.update(process_day_stream(merge_stream(day_folder))) for day_folder in tqdm(sorted(glob.glob(f'{folder}/*/')))]
+
+    with open(f'{folder.split("/")[-2]}.json', 'w') as f:
+        json.dump(year_data, f)
+
+def merge_stream(folder):
+    stream = obspy.Stream()
+    for file in glob.glob(f'{folder}/*.mseed'):
+        stream += obspy.read(file)
+    return stream
+
+def process_day_stream(stream):
+    day_data = {}
+
+    att_trace = stream.select(channel='ATT')[0]
+    norm_att_trace = norm(att_trace, resolution=RESOLUTION)
+
+    channels = [norm(stream.select(channel=channel)[0], RESOLUTION) for channel in ['MH1', 'MH2', 'MHZ']]
+
+    start_time = att_trace.stats.starttime
+    end_time = att_trace.stats.endtime
+    add_time = (end_time - start_time) / len(norm_att_trace)
+
+    for index in range(len(norm_att_trace)):
+        day_data[str(start_time + add_time * index)] =  [channel[index] for channel in channels]
+    
+    return day_data
 
 def norm(trace, resolution) -> np.ndarray:
     # Gets the norm of a trace
-    return [np.abs(np.average(chunk) - OFFSET) for chunk in np.array_split(clean_data(trace.data), trace.stats.npts // resolution, axis=0)]
-
-def get_trace(stream):
-    # Gets the trace from a stream
-    return stream[0]
-
-def get_trace_data(stream):
-    # Gets the data from a trace
-    return get_trace(stream).data
+    return [round((np.abs(np.average(chunk) - OFFSET)),3) for chunk in np.array_split(clean_data(trace.data), trace.stats.npts // resolution, axis=0)]
 
 def clean_data(data):
     # Cleans the data by removing the offset
     mask = np.abs(data) > 1
     return data[mask]
 
-def get_trace_norm(stream, resolution=4000):
-    # Gets the norm of a trace
-    return norm(get_trace(stream), resolution)
-
-def get_all_channel_files(files, channel):
-    # Gets all the files for a given channel from the given folder
-    mseed_files = glob.glob(f'{folder}/**/*.mseed', recursive=True)
-    return sorted([file for file in mseed_files if channel in file])
-
-def get_all_channel_norms(folder, channel, resolution=4000):
-    # Gets all the norms for a given channel from the given folder
-    array = []
-    for file in get_all_channel_files(folder, channel)[START:FINISH]:
-        stream = obspy.read(file)
-        array.extend(get_trace_norm(stream, resolution=resolution))
-    return array
-
-def files_to_json(folder):
+json_by_year(folder)
