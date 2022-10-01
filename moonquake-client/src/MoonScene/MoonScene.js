@@ -8,8 +8,24 @@ import apolloModelMap from "../Assets/apollo map.jpg";
 import { getHemisphereLight } from "./HemisphereLight";
 import { landings } from "./landings";
 import { getBackground } from "./Background";
+import moment from "moment";
 
 const MOON_RADIUS = 10;
+
+const materialLow = new THREE.MeshBasicMaterial({
+  color: 0xff0000,
+  side: THREE.DoubleSide,
+});
+
+const materialMid = new THREE.MeshBasicMaterial({
+  color: 0x00ff00,
+  side: THREE.DoubleSide,
+});
+
+const materialHigh = new THREE.MeshBasicMaterial({
+  color: 0x0000ff,
+  side: THREE.DoubleSide,
+});
 
 const placeObjectOnPlanet = (object, lat, lon, radius) => {
   var latRad = lat * (Math.PI / 180);
@@ -125,17 +141,13 @@ Object.keys(landings).map(async (landingKey) => {
 
 // ---- MARK EARTHQUAKES ----
 
-const drawEarthquakes = () => {
-  
-}
+const landingObjects = [];
 
 Object.keys(landings).map(async (landingKey) => {
   const landingData = landings[landingKey];
 
-  const sphere_radius = MOON_RADIUS;
-
   const geometry = new THREE.SphereGeometry(
-    sphere_radius,
+    MOON_RADIUS,
     64,
     1,
     6.28,
@@ -150,9 +162,11 @@ Object.keys(landings).map(async (landingKey) => {
   const sphere = new THREE.Mesh(geometry, material);
 
   placeObjectOnPlanet(sphere, landingData.lat, landingData.lon, 0.08);
-
-  group.add(sphere);
+  sphere.userData = { landingKey };
+  landingObjects.push(sphere);
 });
+
+landingObjects.forEach((x) => group.add(x));
 
 // ---- GROUP OBJECTS ----
 
@@ -164,10 +178,37 @@ group.add(south);
 group.add(moon);
 scene.add(group);
 
+let currentDemoTime = moment();
+console.log(currentDemoTime.format("DD-MM-YYYY HH:mm"));
+const clock = new THREE.Clock()
+
+// -------- update spheres ------
+const updateSpheres = () => {
+  landingObjects.forEach((obj) => {
+    const landingKey = obj.userData.landingKey
+
+    const usualRingGeom = new THREE.SphereGeometry(
+      MOON_RADIUS,
+      64,
+      1,
+      6.28,
+      6.28,
+      0.01,
+      0.05
+    );
+    // obj.material = Math.random() > 0.5 ? materialHigh : materialLow;
+    obj.geometry.dispose();
+    obj.geometry = usualRingGeom;
+  });
+};
+
 // ---- Configuration ----
 
 const animate = () => {
   requestAnimationFrame(animate);
+
+  updateSpheres();
+
   // group.rotation.y += 0.002; // TODO: add effect
   // group.rotation.x += 0.0001; // TODO: add effect
   // background.rotation.y += 0.0001; // TODO: add effect
