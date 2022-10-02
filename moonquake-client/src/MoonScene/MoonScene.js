@@ -8,11 +8,23 @@ import apolloModelMap from "../Assets/apollo map.jpg";
 import { getHemisphereLight } from "./HemisphereLight";
 import { landings } from "./landings";
 import { getBackground } from "./Background";
-import moment from "moment";
-import apollo16data from "../MoonScene/s16.json";
+import apollo12data from "../Assets/s12.json";
+import apollo14data from "../Assets/s14.json";
+import apollo15data from "../Assets/s15.json";
+import apollo16data from "../Assets/s16.json";
 
 const dataMapper = {
+  apollo12: apollo12data,
+  apollo14: apollo14data,
+  apollo15: apollo15data,
   apollo16: apollo16data,
+};
+
+const timers = {
+  apollo12: 0,
+  apollo14: 0,
+  apollo15: 0,
+  apollo16: 0,
 };
 
 const MOON_RADIUS = 10;
@@ -184,10 +196,18 @@ group.add(moon);
 scene.add(group);
 
 // -------- update spheres ------
+const timer = 0
 const updateSpheres = () => {
   landingObjects.forEach((obj) => {
     const landingKey = obj.userData.landingKey;
-    if (landingKey === "apollo16") {
+    if (
+      Object.keys(dataMapper).includes(landingKey) &&
+      Object.keys(timers).includes(landingKey)
+    ) {
+      // const currentTimer = timers[landingKey];
+      // const currentData = Object.values(dataMapper[landingKey])[timer]
+      // TODO: omer - use the data here. it already loads the appropriate data - you just need to use it in the sphere geometry and use the right material (line 220)
+      console.log(currentData);
       const usualRingGeom = new THREE.SphereGeometry(
         MOON_RADIUS,
         64,
@@ -208,7 +228,6 @@ const updateSpheres = () => {
 
 const animate = () => {
   requestAnimationFrame(animate);
-
   updateSpheres();
 
   // group.rotation.y += 0.002; // TODO: add effect
